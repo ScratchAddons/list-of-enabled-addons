@@ -1,0 +1,30 @@
+<script src="https://unpkg.com/vue@next/dist/vue.global.js"></script>
+<div id="app">
+  <div v-for="addonId in addonIds">{{ addonId }}</div>
+</div>
+
+<script>
+  const vue = Vue.createApp({
+    data() {
+      return {
+        addonIds: [],
+      };
+    },
+    async mounted() {
+      const number = new URLSearchParams(window.location.search).get("number");
+      const version = new URLSearchParams(window.location.search).get("version");
+      const res = await fetch(
+        `https://raw.githubusercontent.com/ScratchAddons/ScratchAddons/${version}/addons/addons.json`
+      );
+      const json = await res.json();
+      const addons = json.filter((addonId) => !addonId.startsWith("//"));
+      const booleanArr = BigInt(number, 36)
+        .toString(2)
+        .split("")
+        .map((num) => (num === "1" ? true : false));
+      for (const i in addons) {
+        if (booleanArr[i]) this.addonIds.push(addons[i]);
+      }
+    },
+  }).mount("#app");
+</script>
