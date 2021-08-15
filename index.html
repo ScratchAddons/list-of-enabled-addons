@@ -11,6 +11,9 @@
       };
     },
     async mounted() {
+      // Very thx stack overflow user
+      const convert = () => [...value.toString()].reduce((r, v) => r * BigInt(radix) + BigInt(parseInt(v, radix)), 0n);
+
       const number = new URLSearchParams(window.location.search).get("number");
       const version = new URLSearchParams(window.location.search).get("version");
       const res = await fetch(
@@ -18,7 +21,7 @@
       );
       const json = await res.json();
       const addons = json.filter((addonId) => !addonId.startsWith("//"));
-      const booleanArr = BigInt(number, 36)
+      const booleanArr = convert(number, 36)
         .toString(2)
         .split("")
         .map((num) => (num === "1" ? true : false));
