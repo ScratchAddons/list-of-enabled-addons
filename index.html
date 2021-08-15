@@ -12,7 +12,7 @@
     },
     async mounted() {
       // Very thx stack overflow user
-      const convert = () => [...value.toString()].reduce((r, v) => r * BigInt(radix) + BigInt(parseInt(v, radix)), 0n);
+      const convert = (value, radix) => [...value.toString()].reduce((r, v) => r * BigInt(radix) + BigInt(parseInt(v, radix)), 0n);
 
       const number = new URLSearchParams(window.location.search).get("number");
       const version = new URLSearchParams(window.location.search).get("version");
