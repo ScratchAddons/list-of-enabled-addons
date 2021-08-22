@@ -21,8 +21,10 @@
       );
       const json = await res.json();
       const addons = json.filter((addonId) => !addonId.startsWith("//"));
-      const booleanArr = convert(number, 36)
-        .toString(2)
+      let binaryStr = convert(number, 36)
+        .toString(2);
+      binaryStr = "0".repeat(addons.length - binaryStr.length) + binaryStr;
+      const booleanArr = binaryStr
         .split("")
         .map((num) => (num === "1" ? true : false));
       for (const i in addons) {
