@@ -1,0 +1,99 @@
+<script src="https://unpkg.com/vue@next/dist/vue.global.js"></script>
+<div id="app">
+  <button type="button" @click="uploadCsv">Upload csv</button>
+</div>
+
+<script>
+  window.showOpenFilePicker = (options) => {
+    return new Promise((resolve) => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.multiple = options.multiple
+      input.accept = options.types
+        .map((type) => type.accept)
+        .flatMap((inst) => Object.keys(inst).flatMap((key) => inst[key]))
+        .join(',')
+
+      input.addEventListener('change', () => {
+        resolve(
+          [...input.files].map((file) => {
+            return {
+              getFile: async () =>
+                new Promise((resolve) => {
+                  resolve(file)
+                }),
+            }
+          }),
+        )
+      })
+
+      input.click()
+    })
+  }
+</script>
+
+<script type="module">
+  import getEnabledAddonIds from './module.js'
+  window.vue = Vue.createApp({
+    data() {
+      return {
+        addonInstances: {},
+        dataArr: [],
+        addonTypes: {},
+      }
+    },
+    async mounted() {},
+    methods: {
+      async uploadCsv() {
+        const reader = new FileReader()
+        const [{ getFile }] = await window.showOpenFilePicker({
+          types: [{ accept: { 'text/*': ['.csv'] } }],
+        })
+        reader.readAsText(await getFile())
+        reader.addEventListener(
+          'load',
+          () => {
+            this.dataArr = reader.result
+              .replaceAll('\r', '')
+              .split('\n')
+              .map((s) => s.split(','))
+            this.countInstances()
+          },
+          false,
+        )
+      },
+      async countInstances() {
+        let amtOfEnabledAddons = ''
+
+        for (const arr of this.dataArr) {
+          const res = await getEnabledAddonIds(arr[0], arr[1])
+          amtOfEnabledAddons += `${res.length}\n`
+          for (const addonId of res) {
+            this.addonInstances[addonId] ??= 0
+            this.addonInstances[addonId]++
+          }
+        }
+
+        for (const addonId of Object.keys(this.addonInstances)) {
+          const res = await fetch(
+            `https://raw.githubusercontent.com/ScratchAddons/ScratchAddons/master/addons/${addonId}/addon.json`,
+          )
+          const json = await res.json()
+          if (json.enabledByDefault) this.addonTypes[addonId] = 'default'
+          else if (json.tags.includes('recommended'))
+            this.addonTypes[addonId] = 'recommended'
+          else if (json.tags.includes('featured'))
+            this.addonTypes[addonId] = 'featured'
+          else this.addonTypes[addonId] = 'none'
+        }
+
+        let str = ''
+        for (const key of Object.keys(this.addonInstances)) {
+          str += `${key},${this.addonInstances[key]},${this.addonTypes[key]}\n`
+        }
+        console.log(str)
+        console.log(amtOfEnabledAddons)
+      },
+    },
+  }).mount('#app')
+</script>
